@@ -21,6 +21,25 @@ jobs:
           gradle-version: current
       - name: Build
         run: gradle build --stacktrace
+      - name: Inspect APIs
+        continue-on-error: true
+        run: |
+          set +e
+          JARS=$(find ~/.gradle -name '*.jar' 2>/dev/null)
+          find_jar() { for j in $JARS; do if unzip -l "$j" 2>/dev/null | grep -q "$1"; then echo "$j"; return; fi; done; }
+          show() { jar=$(find_jar "$1.class"); echo "=== $1"; [ -n "$jar" ] && javap -public -cp "$jar" "$(echo $1 | tr / .)" | head -${2:-60}; }
+          show net/minecraft/world/gen/StructureAccessor 60
+          show net/minecraft/structure/StructureStart 40
+          show net/minecraft/structure/StructurePiece 40
+          show net/minecraft/util/math/BlockBox 40
+          show net/minecraft/client/gui/widget/SliderWidget 30
+          show net/minecraft/client/gui/widget/TextFieldWidget 60
+          show net/minecraft/client/gui/widget/ButtonWidget 30
+          show net/minecraft/client/gui/widget/ButtonWidget\$Builder 20
+          show net/minecraft/client/gui/screen/Screen 90
+          show net/minecraft/server/MinecraftServer 400 | grep -E 'getWorld\(|execute|submit|getOverworld|===' 
+          show net/minecraft/client/gui/DrawContext 150 | grep -E 'drawCenteredText|drawTextWithShadow|===|fill\('
+          show net/minecraft/server/world/ServerWorld 300 | grep -E 'getStructureAccessor|===|getChunk|isChunkLoaded'
       - uses: actions/upload-artifact@v4
         with:
           name: basefinder-jar
