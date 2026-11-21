@@ -25,18 +25,25 @@ jobs:
         continue-on-error: true
         run: |
           set +e
-          JARS=$(find ~/.gradle -name '*.jar' -size +1M 2>/dev/null)
+          JARS=$(find ~/.gradle -name '*.jar' 2>/dev/null)
           find_jar() { for j in $JARS; do if unzip -l "$j" 2>/dev/null | grep -q "$1"; then echo "$j"; return; fi; done; }
-          show() { jar=$(find_jar "$1.class"); echo "=== $1 in $jar"; [ -n "$jar" ] && javap -public -cp "$jar" "$(echo $1 | tr / .)" | head -${2:-80}; }
-          show net/minecraft/client/render/RenderLayer 120
-          show net/minecraft/client/render/VertexRendering 40
-          show net/minecraft/client/gl/RenderPipelines 120
-          show net/minecraft/client/render/state/WorldRenderState 40
-          show net/fabricmc/fabric/api/client/rendering/v1/WorldRenderEvents 40
-          show net/fabricmc/fabric/api/client/rendering/v1/WorldRenderContext 40
-          show net/minecraft/client/world/ClientWorld 200
+          show() { jar=$(find_jar "$1.class"); echo "=== $1 in $(basename "$jar")"; [ -n "$jar" ] && javap -public -cp "$jar" "$(echo $1 | tr / .)" | head -${2:-80}; }
+          echo "--- fabric rendering classes"
+          for j in $JARS; do unzip -l "$j" 2>/dev/null | grep -oE 'net/fabricmc/fabric/api/client/rendering/v1/[A-Za-z/]*\.class' | sort -u; done | head -80
+          show net/fabricmc/fabric/api/client/rendering/v1/world/WorldRenderEvents 60
+          show net/fabricmc/fabric/api/client/rendering/v1/world/WorldRenderContext 60
+          show net/fabricmc/fabric/api/client/rendering/v1/WorldRenderEvents 60
+          show net/fabricmc/fabric/api/client/rendering/v1/WorldRenderContext 60
+          echo "--- minecraft render classes with RenderLayer statics"
+          MC=$(find_jar "net/minecraft/client/render/RenderLayer.class")
+          unzip -l "$MC" | grep -oE 'net/minecraft/client/render/(RenderLayers|RenderSetup|VertexConsumerProvider[A-Za-z$]*|BufferBuilder|BuiltBuffer)\.class'
+          show net/minecraft/client/render/RenderLayers 80
+          show net/minecraft/client/render/RenderSetup 60
           show net/minecraft/client/render/VertexConsumerProvider 30
-          show net/minecraft/client/gl/RenderPipelines
+          show net/minecraft/client/render/VertexRendering 30
+          show com/mojang/blaze3d/pipeline/RenderPipeline 60
+          show com/mojang/blaze3d/pipeline/RenderPipeline\$Builder 80
+          show com/mojang/blaze3d/pipeline/RenderPipeline\$Snippet 20
       - uses: actions/upload-artifact@v4
         with:
           name: basefinder-jar
