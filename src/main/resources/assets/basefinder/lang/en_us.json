@@ -1,0 +1,7 @@
+{
+  "key.category.basefinder.main": "BaseFinder",
+  "key.basefinder.toggle": "Toggle BaseFinder",
+  "key.basefinder.world": "Toggle in-world highlight",
+  "key.basefinder.mark": "Mark current position",
+  "key.basefinder.color": "Next highlight color preset"
+}
